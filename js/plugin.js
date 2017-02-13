@@ -1,1 +1,5 @@
-console.log('ok');
+
+jQuery(document).ready(function(){
+
+
+});
