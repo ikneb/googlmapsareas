@@ -1,5 +1,4 @@
 <?php
-
 /*
 Plugin Name: Google Maps Areas
 Plugin URI: http://
@@ -9,9 +8,17 @@ Author: Weeteam
 Author URI: http://
 */
 
+require_once('classes/Marker.php');
+
 
 class GooglMapsAreasFunc
 {
+
+    function __construct()
+    {
+        register_activation_hook(__FILE__, array('GooglMapsAreasFunc', 'install'));
+        register_uninstall_hook(__FILE__, array('GooglMapsAreasFunc', 'uninstall'));
+    }
 
     function init()
     {
@@ -22,34 +29,34 @@ class GooglMapsAreasFunc
         add_action('init', array($this, 'reset_editor'));
         add_shortcode('map', array($this, 'shortcode_func'));
         add_action('wp_ajax_get_all_marker', 'get_all_marker');
-        add_action( 'wp_ajax_nopriv_get_all_marker', 'get_all_marker' );
-        register_activation_hook( __FILE__, 'googlmapsareas_activate' );
-        register_uninstall_hook( __FILE__, 'googlmapsareas_uninstall' );
-
+        add_action('wp_ajax_nopriv_get_all_marker', 'get_all_marker');
     }
 
-    function googlmapsareas_activate() {
+    function install()
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . "googlmapsareas";
         $charset_collate = $wpdb->get_charset_collate();
         $sql = "CREATE TABLE IF NOT EXISTS $table_name (
-              id_marker INT (9) NOT NULL AUTO_INCREMENT,
-              id_map_post INT (9) NOT NULL,
-              name VARCHAR NOT NULL,
-              icon VARCHAR NOT NULL,
-              label_text VARCHAR NOT NULL,
-              window_text text NOT NULL,
-              animate text NOT NULL,
-              PRIMARY KEY  (id_marker)
-        ) $charset_collate;";
+              id INT(9) NOT NULL AUTO_INCREMENT,
+              id_marker INT(9) NOT NULL,
+              id_map_post INT(9) NOT NULL,
+              coordinates varchar(255) NOT NULL default '',
+              name varchar(255) NOT NULL default '',
+              icon varchar(255) NOT NULL default '',
+              label_text varchar(255) NOT NULL default '',
+              window_text varchar(255) NOT NULL default '',
+              animate varchar(255) NOT NULL default '',
+              PRIMARY KEY (id)
+        ) $charset_collate";
 
-        $wpdb->query($sql);
 
-        /*require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sql );*/
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
     }
 
-    function googlmapsareas_uninstall(){
+    function uninstall()
+    {
 
         global $wpdb;
         $table_name = $wpdb->prefix . "googlmapsareas";
@@ -67,8 +74,8 @@ class GooglMapsAreasFunc
         }
 
         wp_enqueue_script('goglemapsareas-init-js', plugin_dir_url(__FILE__) . 'js/googlMap.js');
-        wp_localize_script( 'goglemapsareas-init-js', 'ajax_object',
-            array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'we_value' => 1234 ) );
+        wp_localize_script('goglemapsareas-init-js', 'ajax_object',
+            array('ajax_url' => admin_url('admin-ajax.php'), 'we_value' => 1234));
 
     }
 
@@ -95,17 +102,124 @@ class GooglMapsAreasFunc
         echo '<p class="map__shortcode">Use shrtcode for render map <strong>[map id=' . $post->ID . ']</strong></p>';
         if ($post->post_type == 'wt_maps') {
             ?>
-            <div class="map__wrapper" data-postid = '. $post->ID . '>
+            <div class="map__wrapper">
                 <script
                     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCByLB65AuBykaj_lFmuiZWrIRYXvLLvJI&callback=initMap"
                     async defer>
                 </script>
                 <div id="map"></div>
             </div>
-            <div class="marker__wrapper">
-                <!--                <a class="marker__add">+ Add marker</a>-->
+            <div class="marker__wrapper" data-postid="<?php echo $post->ID; ?>">
                 <ul id="marker__list">
+                    <?php
+                    $markers = Marker::getMarkerByPostId($post->ID);
+                    $all_icon = Marker::getAllDefaultIcon();
+                    if (isset($markers)) {
+                        foreach ($markers as $marker) {
+                            ?>
+                            <li>
+                                <button class="marker__remove button button-primary">Delete field</button>
+                                <button class="marker__save button button-primary">Save</button>
+                                <div class="marker__group-name" data-c="<?php echo $marker->coordinates; ?>"
+                                     data-id="<?php echo $marker->id_marker; ?>">
+                                    <label class="marker__lable-name">Name</label>
+                                    <input name="name" class="marker__input" value="<?php echo $marker->name; ?>">
+                                </div>
+                                <div class="marker__group-icon">
+                                    <lable class="marker__label-select">Icon</lable>
+                                    <select class="marker__select">
+                                        <option value="default">Default</option>
+                                        <?php foreach ($all_icon as $icon) {
+                                            $icon_selected = $icon . '.png';
+                                            ?>
+                                            <option
+                                                value="<?php echo $icon ?>.png" <?php if ($icon_selected == $marker->icon) echo 'selected'; ?>>
+                                                <?php echo $icon ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="marker__group-icon">
+                                    <lable class="marker__label-action">Action</lable>
+                                    <select class="marker__select-action">
+                                        <option value="0">Add</option>
+                                        <option value="1">Title</option>
+                                        <option value="2">Info windows</option>
+                                        <option value="3">Animate effect</option>
+                                    </select>
+                                </div>
+                                <?php
+                                if (!empty($marker->label_text)) { ?>
+                                    <div class="marker__group-title">
+                                        <img src="/wp-content/plugins/googlmapsareas/img/61391.png"></img>
+                                        <lable class="marker__label-title">Lable for icon</lable>
+                                        <textarea name="label"
+                                                  class="marker__label-text"><?php echo $marker->label_text; ?></textarea>
+                                    </div>
+                                <?php }
+                                if (!empty($marker->window_text)) { ?>
+                                    <div class="marker__group-windows">
+                                        <img src="/wp-content/plugins/googlmapsareas/img/61391.png"></img>
+                                        <lable class="marker__label-title">Window info for icon</lable>
+                                        <textarea name="window"
+                                                  class="marker__windows-text"><?php echo $marker->window_text; ?></textarea>
+                                    </div>
+                                <?php }
+                                if (!empty($marker->animate)) { ?>
+                                    <div class="marker__group-animate">
+                                        <img src="/wp-content/plugins/googlmapsareas/img/61391.png"></img>
+                                        <lable class="marker__label-title">Animate effect</lable>
+                                        <select class="marker__select-animate">
+                                            <option value="0">Select animation effect</option>
+                                            <option
+                                                value="BOUNCE" <?php if ($marker->animate == 'BOUNCE') echo 'selected' ?>>
+                                                BOUNCE
+                                            </option>
+                                            <option
+                                                value="DROP" <?php if ($marker->animate == 'DROP') echo 'selected' ?>>
+                                                DROP
+                                            </option>
+                                        </select>
+                                    </div>
+                                <?php } ?>
+                            </li>
+                            <script>
+                                jQuery(window).load(function () {
+                                    <?php $coord = explode( ',', $marker->coordinates );?>
+                                    var marker = new google.maps.Marker({
+                                        position: {lat: <?php echo $coord[0]; ?>, lng:<?php echo $coord[1]; ?>},
+                                        label: labels[labelIndex++ % labels.length],
+                                        map: map,
+                                    });
+                                    <?php if($marker->icon != 'default'){ ?>
+                                    img = '<?php echo $marker->icon; ?>';
+                                    marker.setIcon('/wp-content/plugins/googlmapsareas/img/marker-icon/' + img);
+                                    <?php }
+                                        if(!empty($marker->label_text)){ ?>
+                                    marker.setTitle('<?php echo $marker->label_text; ?>');
+                                    <?php }
+                                    if(!empty($marker->window_text)){?>
+                                    var contentString = '<div id="content"><?php echo $marker->window_text;?></div>';
+                                    google.maps.event.clearListeners(marker, 'click');
+                                    google.maps.event.addListener(marker, 'click', function () {
 
+                                        var infowindow = new google.maps.InfoWindow({
+                                            content: contentString,
+                                            maxWidth: 200
+                                        });
+                                        infowindow.open(map, marker);
+                                    });
+                                    <?php }
+                                        if(!empty($marker->animate)){ ?>
+                                    marker.addListener('click', function () {
+                                        marker.setAnimation(google.maps.Animation.<?php echo $marker->animate;?>);
+                                    });
+                                    <?php }
+                                ?>
+                                    markers.push(marker);
+                                });
+                            </script>
+                        <?php }
+                    } ?>
                 </ul>
             </div>
             <?php
@@ -129,7 +243,8 @@ class GooglMapsAreasFunc
 
     function shortcode_func($attr)
     {
-
+        $markers = Marker::getMarkerByPostId($attr['id']);
+        $markers = json_encode($markers);
         $result =
             '<div class="map__wrapper">
                 <script
@@ -138,6 +253,7 @@ class GooglMapsAreasFunc
                 </script>
                 <div id="map" style="width:100%;height:400px;"></div>
                 <script>
+                    var markers = ' . $markers . ';
                     function initMap() {
                         // Create a map object and specify the DOM element for display.
                         var map = new google.maps.Map(document.getElementById("map"), {
@@ -145,9 +261,23 @@ class GooglMapsAreasFunc
                             scrollwheel: false,
                             zoom: 10
                         });
+                           jQuery.each(markers, function(){
+                            var arr_coord = this.coordinates.split(",");
+                            console.log(arr_coord);
+                            var marker = new google.maps.Marker({
+                                    position: {lat: Number(arr_coord[0]), lng: Number(arr_coord[1])},
+                                    map: map,
+                                });
+
+                            var icon = "/wp-content/plugins/googlmapsareas/img/marker-icon/" + this.icon;
+                            marker.setIcon(icon);
+                            marker.setTitle(this.label_text);
+
+                           });
                     }
                 </script>
             </div>';
+
 
         return $result;
     }
@@ -155,7 +285,7 @@ class GooglMapsAreasFunc
     function get_all_marker()
     {
         $all_ikon = json_encode(scandir(plugin_dir_path(__FILE__) . 'img/marker-icon'));
-       echo 'test';
+        echo 'test';
         wp_die();
     }
 }
@@ -163,3 +293,4 @@ class GooglMapsAreasFunc
 global $google_maps_areas;
 $google_maps_areas = new GooglMapsAreasFunc();
 $google_maps_areas->init();
+?>

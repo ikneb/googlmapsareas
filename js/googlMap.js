@@ -15,7 +15,7 @@ function initMap() {
     google.maps.event.addListener(map, 'click', function (event) {
         var newLi = document.createElement('li');
 
-        id_marker = addMarker(event.latLng, map) - 1;
+        id_marker = addMarker(event.latLng, map)-1;
         newLi.innerHTML =
             '<button class="marker__remove button button-primary">Delete field</button>' +
             '<button class="marker__save button button-primary">Save</button>' +
@@ -59,33 +59,6 @@ function addMarker(location, map) {
     return markers.push(marker);
 }
 
-/*
- function getMarker(newLi) {
- jQuery.ajax({
- type: 'POST',
- url: ajaxurl,
- data: {
- 'action': 'get_all_markers',
- whatever: ajax_object.we_value
- },
- success: function (data) {
- console.log(data);
- }
- });
-
- jQuery.post(
- ajaxurl,
- {
- 'action': 'get_all_markers',
- whatever: ajax_object.we_value
- },
- function (response) {
- alert('The server responded: ' + response);
- }
- );
- };
- */
-
 function getMarker(newLi) {
     jQuery.ajax({
         type: 'POST',
@@ -111,21 +84,27 @@ jQuery(document).on('click', '.marker__remove', function (e) {
 
 jQuery(document).on('click', '.marker__save', function (e) {
     e.preventDefault();
-    var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
+    var id_marker = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
+    var id_map_post = jQuery(this).closest('.marker__wrapper').attr('data-postid');
     var name = jQuery(this).closest('li').find('input[name="name"]').val();
+    var coordinates = jQuery(this).closest('li').find('.marker__group-name').attr('data-c');
     var icon = jQuery(this).closest('li').find('.marker__select').val();
-    var label_text = jQuery(this).closest('li').find('textarea[name="label"]').val();
-    var window_text = jQuery(this).closest('li').find('textarea[name="window"]').val();
-    var animate = jQuery(this).closest('li').find('.marker__select-animate').val();
+    var label_text = jQuery(this).closest('li').find('textarea[name="label"]').val()?
+        jQuery(this).closest('li').find('textarea[name="label"]').val(): '';
+    var window_text = jQuery(this).closest('li').find('textarea[name="window"]').val()?
+        jQuery(this).closest('li').find('textarea[name="window"]').val(): '';
+    var animate = jQuery(this).closest('li').find('.marker__select-animate').val()?
+        jQuery(this).closest('li').find('.marker__select-animate').val() : '';
 
-    console.log(label_text, window_text, icon, name, id, animate);
     jQuery.ajax({
         type: 'POST',
         url: '/wp-content/plugins/googlmapsareas/ajax.php',
         data: {
             action: 'save_marker',
-            id: id,
+            id_marker: id_marker,
+            id_map_post: id_map_post,
             name: name,
+            coordinates: coordinates,
             icon: icon,
             label_text: label_text,
             window_text: window_text,
@@ -191,8 +170,8 @@ jQuery(document).on('click', '.marker__select-action', function (e) {
                     '<lable class="marker__label-title">Animate effect</lable>' +
                     '<select class="marker__select-animate">' +
                     '<option value="0">Select animation effect</option>' +
-                    '<option value="1">BOUNCE</option>' +
-                    '<option value="2">DROP</option>' +
+                    '<option value="BOUNCE">BOUNCE</option>' +
+                    '<option value="DROP">DROP</option>' +
                     '</select>' +
                     '</div>'
                 );
@@ -262,14 +241,13 @@ jQuery(document).on('click', '.marker__select-animate', function (e) {
 
     switch (select) {
         case '0':
-            console.log(0);
             break;
-        case '1':
+        case 'BOUNCE':
             markers[id].addListener('click', function () {
                 markers[id].setAnimation(google.maps.Animation.BOUNCE);
             });
             break;
-        case '2':
+        case 'DROP':
             markers[id].addListener('click', function () {
                 markers[id].setAnimation(google.maps.Animation.DROP);
             });
