@@ -17,10 +17,6 @@ class Marker
     public $window_text;
     public $animate;
 
-    function __construct()
-    {
-
-    }
 
     public function save()
     {
@@ -46,6 +42,7 @@ class Marker
                 array('id_marker' => $id_marker,
                     'id_map_post' => $this->id_map_post)
             );
+            return true;
         } else {
             $wpdb->insert(
                 $wpdb->prefix . "googlmapsareas", array(
@@ -59,9 +56,9 @@ class Marker
                     'animate' => $this->animate,
                 )
             );
+            return true;
         }
-
-
+        return false;
     }
 
 
@@ -91,4 +88,15 @@ class Marker
         return $all_ikon;
     }
 
+
+    public static function remove($id_marker, $id_post_map){
+        global $wpdb;
+
+        $wpdb->delete( $wpdb->prefix . 'googlmapsareas',
+            array(
+                'id_marker' => $id_marker,
+                'id_map_post' => $id_post_map
+            ) );
+        return true;
+    }
 }

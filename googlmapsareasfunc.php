@@ -32,6 +32,7 @@ class GooglMapsAreasFunc
         add_action('wp_ajax_nopriv_get_all_marker', 'get_all_marker');
     }
 
+
     function install()
     {
         global $wpdb;
@@ -76,6 +77,7 @@ class GooglMapsAreasFunc
         wp_enqueue_script('goglemapsareas-init-js', plugin_dir_url(__FILE__) . 'js/googlMap.js');
         wp_localize_script('goglemapsareas-init-js', 'ajax_object',
             array('ajax_url' => admin_url('admin-ajax.php'), 'we_value' => 1234));
+        wp_enqueue_media();
 
     }
 
@@ -98,10 +100,12 @@ class GooglMapsAreasFunc
 
     function my_add_to_map()
     {
-        global $post; //    var_dump($post);exit;
-        echo '<p class="map__shortcode">Use shrtcode for render map <strong>[map id=' . $post->ID . ']</strong></p>';
+        global $post;
+        echo '<p class="map__shortcode">Use shrtcode for render map <strong>[map id=' .
+            $post->ID . ']</strong></p>';
         if ($post->post_type == 'wt_maps') {
             ?>
+
             <div class="map__wrapper">
                 <script
                     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCByLB65AuBykaj_lFmuiZWrIRYXvLLvJI&callback=initMap"
@@ -114,7 +118,7 @@ class GooglMapsAreasFunc
                     <?php
                     $markers = Marker::getMarkerByPostId($post->ID);
                     $all_icon = Marker::getAllDefaultIcon();
-                    if (isset($markers)) {
+                    if (!empty($markers)) {
                         foreach ($markers as $marker) {
                             ?>
                             <li>
@@ -127,7 +131,13 @@ class GooglMapsAreasFunc
                                 </div>
                                 <div class="marker__group-icon">
                                     <lable class="marker__label-select">Icon</lable>
-                                    <select class="marker__select">
+                                    <select class="marker__select-method" >
+                                        <option value="0">Choose</option>
+                                        <option value="1">Select icon</option>
+                                        <option value="2">Download icon</option>
+                                    </select>
+                                    <button type="button" name="my_icon" class="my_icon btn btn-primary no-active upload_image_button"></button>
+                                    <select class="marker__select no-active" >
                                         <option value="default">Default</option>
                                         <?php foreach ($all_icon as $icon) {
                                             $icon_selected = $icon . '.png';
@@ -137,6 +147,7 @@ class GooglMapsAreasFunc
                                                 <?php echo $icon ?></option>
                                         <?php } ?>
                                     </select>
+
                                 </div>
                                 <div class="marker__group-icon">
                                     <lable class="marker__label-action">Action</lable>
@@ -200,12 +211,11 @@ class GooglMapsAreasFunc
                                     if(!empty($marker->window_text)){?>
                                     var contentString = '<div id="content"><?php echo $marker->window_text;?></div>';
                                     google.maps.event.clearListeners(marker, 'click');
+                                    var infowindow = new google.maps.InfoWindow({
+                                        content: contentString,
+                                        maxWidth: 200
+                                    });
                                     google.maps.event.addListener(marker, 'click', function () {
-
-                                        var infowindow = new google.maps.InfoWindow({
-                                            content: contentString,
-                                            maxWidth: 200
-                                        });
                                         infowindow.open(map, marker);
                                     });
                                     <?php }
@@ -215,11 +225,22 @@ class GooglMapsAreasFunc
                                     });
                                     <?php }
                                 ?>
-                                    markers.push(marker);
+                                    markers[<?php echo $marker->id_marker?>] = marker;
+                                    LatLngList.push(  new google.maps.LatLng (<?php echo $marker->coordinates; ?>) );
                                 });
                             </script>
-                        <?php }
-                    } ?>
+                        <?php }?>
+                        <script>
+                            jQuery(window).load(function () {
+                                var latlngbounds = new google.maps.LatLngBounds();
+                                LatLngList.forEach(function(latLng){
+                                    latlngbounds.extend(latLng);
+                                });
+                                map.setCenter(latlngbounds.getCenter());
+                                map.fitBounds(latlngbounds);
+                            });
+                        </script>
+                    <?php }?>
                 </ul>
             </div>
             <?php
@@ -252,32 +273,10 @@ class GooglMapsAreasFunc
                     async defer>
                 </script>
                 <div id="map" style="width:100%;height:400px;"></div>
-                <script>
-                    var markers = ' . $markers . ';
-                    function initMap() {
-                        // Create a map object and specify the DOM element for display.
-                        var map = new google.maps.Map(document.getElementById("map"), {
-                            center: {lat: 49.994783, lng: 36.1430755},
-                            scrollwheel: false,
-                            zoom: 10
-                        });
-                           jQuery.each(markers, function(){
-                            var arr_coord = this.coordinates.split(",");
-                            console.log(arr_coord);
-                            var marker = new google.maps.Marker({
-                                    position: {lat: Number(arr_coord[0]), lng: Number(arr_coord[1])},
-                                    map: map,
-                                });
-
-                            var icon = "/wp-content/plugins/googlmapsareas/img/marker-icon/" + this.icon;
-                            marker.setIcon(icon);
-                            marker.setTitle(this.label_text);
-
-                           });
-                    }
-                </script>
             </div>';
 
+        wp_enqueue_script('goglemapsareas-front-map', plugin_dir_url(__FILE__) . 'js/frontMap.js');
+        wp_localize_script('goglemapsareas-front-map', 'markers_object', $markers);
 
         return $result;
     }

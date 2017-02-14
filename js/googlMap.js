@@ -2,10 +2,12 @@ var labels = '';
 var labelIndex = 0;
 var map;
 var markers = [];
+var LatLngList = [];
+var files;
 
 
 function initMap() {
-    var myLatlng = {lat: 49.994783, lng: 36.1430755};
+    var myLatlng = {lat: 51.508530, lng: -0.076132};
     map = new google.maps.Map(document.getElementById('map'), {
         center: myLatlng,
         scrollwheel: false,
@@ -28,7 +30,13 @@ function initMap() {
             '</div>' +
             '<div class="marker__group-icon">' +
             '<lable class="marker__label-select">Icon</lable>' +
-            '<select class="marker__select">' +
+            '<select class="marker__select" >'+
+            '<option value="default">Select icon</option>'+
+            '<option value="default">Download icon</option>'+
+            '</select><br>' +
+            '<input type="file" name="type-method" class=" no-active">' +
+            '<input type="file" name="my_icon" class="my_icon no-active">' +
+            '<select class="marker__select no-active">' +
             '<option value="default">Default</option>' +
             '</select>' +
             '</div>' +
@@ -76,9 +84,24 @@ function getMarker(newLi) {
 
 jQuery(document).on('click', '.marker__remove', function (e) {
     e.preventDefault();
-    jQuery(this).closest('li').remove();
+
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
+    var id_map_post = jQuery(this).closest('.marker__wrapper').attr('data-postid');
+    jQuery(this).closest('li').remove();
     markers[id].setMap(null);
+    jQuery.ajax({
+        type: 'POST',
+        url: '/wp-content/plugins/googlmapsareas/ajax.php',
+        data: {
+            action: 'remove_marker',
+            id_marker: id,
+            id_map_post: id_map_post,
+        },
+        success: function (data) {
+            process(data);
+        }
+    });
+
 });
 
 
@@ -111,7 +134,7 @@ jQuery(document).on('click', '.marker__save', function (e) {
             animate: animate
         },
         success: function (data) {
-            console.log(data);
+            process(data);
         }
     });
 });
@@ -256,4 +279,81 @@ jQuery(document).on('click', '.marker__select-animate', function (e) {
 
             break;
     }
+});
+
+jQuery(document).on('click', '.marker__select-method', function(e){
+    e.preventDefault();
+    var select = jQuery(this).val();
+    switch (select) {
+        case '0':
+            break;
+        case '1':
+          jQuery(this).closest('li').find('.marker__select').removeClass('no-active');
+          jQuery(this).closest('li').find('.my_icon').addClass('no-active');
+            break;
+        case '2':
+            jQuery(this).closest('li').find('.my_icon').removeClass('no-active');
+            jQuery(this).closest('li').find('.marker__select').addClass('no-active');
+
+            break;
+    }
+});
+
+/*jQuery('input[type=file]').live('change', function() {
+    var input = jQuery('input[type=file]');
+    var fd = new FormData;
+    fd.append('img', input.prop('files')[0]);
+    jQuery.ajax({
+        url: '/wp-content/plugins/googlmapsareas/ajax.php',
+        data: fd,
+        processData: false,
+        contentType: false,
+        type: 'POST',
+        success: function (data) {
+           console.log(data);
+        }
+    });
+});*/
+
+function process(data){
+    if(data){
+        jQuery('.map__wrapper').append(
+            '<div class="notice notice-success is-dismissible">'+
+            ' <p><strong>Success.</strong></p></div>');
+        setTimeout(function () {
+            jQuery('.notice-success').remove();
+        }, 2000);
+    }else{
+        jQuery('.map__wrapper').append(
+            '<div class="notice notice-error is-dismissible">'+
+            ' <p><strong>Error.</strong></p></div>');
+        setTimeout(function () {
+            jQuery('.notice-error').remove();
+        }, 2000);
+
+    }
+}
+jQuery(function($){
+
+    $('.upload_image_button').click(function(){
+        var send_attachment_bkp = wp.media.editor.send.attachment;
+        var button = $(this);
+        wp.media.editor.send.attachment = function(props, attachment) {
+            $(button).parent().prev().attr('src', attachment.url);
+            $(button).prev().val(attachment.id);
+            wp.media.editor.send.attachment = send_attachment_bkp;
+        }
+        wp.media.editor.open(button);
+        return false;
+    });
+
+    $('.remove_image_button').click(function(){
+        var r = confirm("Уверены?");
+        if (r == true) {
+            var src = $(this).parent().prev().attr('data-src');
+            $(this).parent().prev().attr('src', src);
+            $(this).prev().prev().val('');
+        }
+        return false;
+    });
 });
