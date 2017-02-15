@@ -83,8 +83,8 @@ function initMap() {
     LatLngList.forEach(function(latLng){
         latlngbounds.extend(latLng);
     });
-    if(markers_object.coordinate.length > 0){
-
+    console.log(markers_object.coordinate.length);
+    if(markers_object.coordinate.length > 1){
         map.setCenter(new google.maps.LatLng(Number(markers_object.coordinate[0]), Number(markers_object.coordinate[1])));
         map.setZoom(Number(markers_object.zoom));
     }else{

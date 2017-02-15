@@ -109,7 +109,7 @@ class GooglMapsAreasFunc
         echo '<p class="map__shortcode">Use shortcode for render map <strong>[map id=' .
             $post->ID . ']</strong>.
              You can resize map, if you add "width" and "height" attribute([map id=' .
-            $post->ID . ' width=300 height=500]).</p>';
+            $post->ID . ' width=100% height=500]).</p>';
         if ($post->post_type == 'wt_maps') {
             ?>
 
