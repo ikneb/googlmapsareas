@@ -1,5 +1,5 @@
-var markers = JSON.parse(markers_object);
-console.log()
+var markers = JSON.parse(markers_object.markers);
+
 var LatLngList = [];
 var map;
 function initMap() {
@@ -21,6 +21,24 @@ function initMap() {
             var icon = '/wp-content/plugins/googlmapsareas/img/marker-icon/' + this.icon;
             marker.setIcon(icon);
         }
+        if(this.attachment_id != 0){
+            attachment_id = this.attachment_id;
+            jQuery.ajax({
+                type: 'POST',
+                url: '/wp-content/plugins/googlmapsareas/ajax.php',
+                data: {
+                    action: 'get_img',
+                    attachment_id: attachment_id
+                },
+                success: function (data) {
+                    var icon = {
+                        url: data,
+                        scaledSize: new google.maps.Size(50, 50)
+                    };
+                    marker.setIcon(icon);
+                }
+            });
+        }
         if(this.label_text != ''){
             marker.setTitle(this.label_text);
         }
@@ -38,12 +56,26 @@ function initMap() {
         var animat;
         if(this.animate == 'DROP'){
             animat = google.maps.Animation.DROP;
-        }else if(this.animate != 'BOUNCE'){
+        }else if(this.animate == 'BOUNCE'){
             animat = google.maps.Animation.BOUNCE;
         }
         marker.addListener("click", function () {
             marker.setAnimation(animat);
         });
+        if(this.link != ''){
+            link = this.link;
+            marker.addListener("click", function () {
+                window.open(link);
+            });
+        }
+
+        if(this.script != ''){
+            script = this.script;
+            marker.addListener("click", function () {
+                eval(script);
+            });
+        }
+
         LatLngList.push(  new google.maps.LatLng (Number(arr_coord[0]),Number(arr_coord[1])) );
     });
 
@@ -51,6 +83,12 @@ function initMap() {
     LatLngList.forEach(function(latLng){
         latlngbounds.extend(latLng);
     });
-    map.setCenter(latlngbounds.getCenter());
-    map.fitBounds(latlngbounds);
+    if(markers_object.coordinate.length > 0){
+
+        map.setCenter(new google.maps.LatLng(Number(markers_object.coordinate[0]), Number(markers_object.coordinate[1])));
+        map.setZoom(Number(markers_object.zoom));
+    }else{
+        map.setCenter(latlngbounds.getCenter());
+        map.fitBounds(latlngbounds);
+    }
 }

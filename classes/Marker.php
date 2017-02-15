@@ -13,9 +13,13 @@ class Marker
     public $name;
     public $coordinates;
     public $icon;
+    public $method;
     public $label_text;
     public $window_text;
     public $animate;
+    public $link;
+    public $script;
+    public $attachment_id;
 
 
     public function save()
@@ -35,9 +39,13 @@ class Marker
                 'coordinates' => $this->coordinates,
                 'name' => $this->name,
                 'icon' => $this->icon,
+                'method' => $this->method,
                 'label_text' => $this->label_text,
                 'window_text' => $this->window_text,
                 'animate' => $this->animate,
+                'link' => $this->link,
+                'script' => $this->script,
+                'attachment_id' => $this->attachment_id,
             ),
                 array('id_marker' => $id_marker,
                     'id_map_post' => $this->id_map_post)
@@ -51,9 +59,13 @@ class Marker
                     'coordinates' => $this->coordinates,
                     'name' => $this->name,
                     'icon' => $this->icon,
+                    'method' => $this->method,
                     'label_text' => $this->label_text,
                     'window_text' => $this->window_text,
                     'animate' => $this->animate,
+                    'link' => $this->link,
+                    'script' => $this->script,
+                    'attachment_id' => $this->attachment_id,
                 )
             );
             return true;
@@ -92,11 +104,11 @@ class Marker
     public static function remove($id_marker, $id_post_map){
         global $wpdb;
 
-        $wpdb->delete( $wpdb->prefix . 'googlmapsareas',
-            array(
-                'id_marker' => $id_marker,
-                'id_map_post' => $id_post_map
-            ) );
+            $wpdb->delete( $wpdb->prefix . 'googlmapsareas',
+                array(
+                    'id_marker' => $id_marker,
+                    'id_map_post' => $id_post_map
+                ) );
         return true;
     }
 }

@@ -22,12 +22,17 @@
 #marker__list .marker__group-action,
 #marker__list .marker__group-title,
 #marker__list .marker__group-windows,
+#marker__list .marker__group-link,
+#marker__list .marker__group-script,
+#marker__list .marker__group-resize,
 #marker__list .marker__group-animate {
     display: block;
     vertical-align: top;
     width: auto;
     box-sizing: border-box;
     margin-top: 30px;
+    text-align: center;
+
 }
 #marker__list .marker__group-title,
 #marker__list .marker__group-windows{
@@ -58,31 +63,30 @@
     width: 300px;
 }
 
- .marker__select-action, .marker__select-animate, .marker__select-method {
+ .marker__select-action, .marker__select-animate, .marker__select-method, .marker__select-icon {
     float: right;
     margin-right:30%;
     width: 301px;
     border: 1px solid #ddd;
 }
 
-.marker__select, .my_icon{
-    float: right;
-    margin-right:30%;
-    width: 301px;
-    border: 1px solid #ddd;
-
-}
-
-
-
-.marker__group-title img, .marker__group-windows img, .marker__group-animate img, .marker__group-animate img{
+.marker__group-title img,
+.marker__group-windows img,
+.marker__group-animate img,
+.marker__group-animate img,
+.marker__download .img,
+.marker__group-link img,
+.marker__group-script img,
+.marker__group-resize img,
+.marker__select img{
     float: right;
     width: 11px;
     margin: 0 0 0 -50px;
     cursor: pointer;
 }
 
-.marker__group-title textarea, .marker__group-windows textarea {
+#marker__list textarea
+{
     border: 1px solid #ddd;
     -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
     box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
@@ -105,7 +109,38 @@
 
 .no-active{display: none !important;}
 
-.my_icon{
-    float: right;
-    margin-right: 30%;
+
+
+.marker__download-icon{
+    margin-left: 200px;
+}
+
+
+.marker__select{
+    text-align: center;
+}
+
+.marker__width-text,
+.marker__height-text{
+    border: 1px solid #ddd;
+    -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
+    background-color: #fff;
+    color: #32373c;
+    outline: 0;
+    -webkit-transition: 50ms border-color ease-in-out;
+    transition: 50ms border-color ease-in-out;
+    padding: 3px 5px;
+    width: 60px;
+}
+.marker__group-resize .marker__label-title{
+    margin-left: 10px;
+}
+
+.marker__wrapper-resize{
+    margin-left: 22%;
+}
+
+.center-map{
+    margin: 10px;
 }
