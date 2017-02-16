@@ -473,7 +473,7 @@ class GooglMapsAreasFunc
                 <div id="map" style="width:' . $width . ';height:' . $height . ';"></div>
             </div>
             ';
-        foreach($polyline as $poly){
+       foreach($polyline as $poly){
             $result .= '<script>
             jQuery(window).load(function(){
             var flightPlanCoordinates =['.$poly->coordinates.'];
