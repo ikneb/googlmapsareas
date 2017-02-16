@@ -91,5 +91,10 @@ if(!empty($_POST['action'])) {
                 $polyline->coordinates = $_POST['coordinate'] ? $_POST['coordinate'] : '';
                 echo $polyline->save();
             break;
+
+        case 'remove_polyline':
+            if(isset($_POST['id']))
+            echo Polylines::remove($_POST['id']);
+            break;
     }
 }

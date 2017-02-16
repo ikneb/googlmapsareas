@@ -53,11 +53,6 @@ class Polylines
         return false;
     }
 
-    public function remove()
-    {
-
-    }
-
     public static function  getAllByPostId($id_post)
     {
         global $wpdb;
@@ -66,6 +61,16 @@ class Polylines
             $wpdb->prefix . "polylines WHERE id_map_post = " . $id_post);
 
         return $polylines;
+    }
+
+    public static function remove($id){
+        global $wpdb;
+
+        $wpdb->delete($wpdb->prefix . 'polylines',
+            array(
+                'id' => $id,
+            ));
+        return true;
     }
 
 }

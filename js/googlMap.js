@@ -5,6 +5,7 @@ var markers = [];
 var LatLngList = [];
 var files;
 var poly;
+var polies=[];
 
 
 /**
@@ -558,8 +559,8 @@ jQuery(document).on('click', '.polylines-add', function (e) {
     jQuery(this).addClass('no-active');
     var newLi = document.createElement('li');
     newLi.innerHTML =
-        '<button class="polylines__remove button button-primary">Delete polyline</button>' +
-        '<button class="polylines__save button button-primary">Save</button>' +
+        '<button class="polylines__remove button button-primary no-active">Delete polyline</button>' +
+        '<button class="polylines__save button button-primary no-active">Save</button>' +
         '<div class="polylines__group">' +
         '<label class="polylines__lable">Name</label>' +
         '<input name="name" class="marker__input">' +
@@ -567,8 +568,8 @@ jQuery(document).on('click', '.polylines-add', function (e) {
         '<div class="polylines__group">' +
         '<lable class="polylines__lable">Color</lable>' +
         '<select class="polylines__select-color">' +
-        '<option value="#ffffff">Black</option>' +
-        '<option value="#000000">White</option>' +
+        '<option value="#000000">Black</option>' +
+        '<option value="#0000FF">Blue</option>' +
         '<option value="#FF0000">Red</option>' +
         '</select></div>' +
         '<div class="polylines__group">' +
@@ -588,6 +589,10 @@ jQuery(document).on('click', '.polylines-add', function (e) {
     poly.setMap(map);
     google.maps.event.clearListeners(map, 'click');
     map.addListener('click', function(event){
+        if(jQuery(newLi).find('.polylines__save').hasClass('no-active')){
+            jQuery(newLi).find('.polylines__save').removeClass('no-active')
+            jQuery(newLi).find('.polylines__remove').removeClass('no-active')
+        }
         var path = poly.getPath();
         path.push(event.latLng);
         coord_poly =  getPathVariableCode(poly);
@@ -644,9 +649,10 @@ jQuery(document).on('click', '.polylines__save', function (e) {
             thick: thick
         },
         success: function (data) {
-            console.log(data);
             button.closest('li').attr('data-id', data );
             jQuery('.polylines-add').removeClass('no-active');
+            process(data);
+            polies[data] = poly;
         }
     });
 });
@@ -660,7 +666,50 @@ jQuery(document).on('click', '.polylines__remove', function (e) {
     map.setOptions({draggableCursor: 'url(http://maps.google.com/mapfiles/openhand.cur), move'});
     google.maps.event.clearListeners(map, 'click');
     addListenerForAddMarkers(myLatlng);
-    poly.setMap(null);
+    var id = jQuery(this).closest('li').attr('data-id') ? jQuery(this).closest('li').attr('data-id'): '';
+     polies[id].setMap(null);
     jQuery(this).closest('li').remove();
     jQuery('.polylines-add').removeClass('no-active');
+    jQuery.ajax({
+        type: 'POST',
+        url: '/wp-content/plugins/googlmapsareas/ajax.php',
+        data: {
+            action: 'remove_polyline',
+            id: id,
+        },
+        success: function (data) {
+            process(data);
+        }
+    });
 });
+
+
+/**
+ * Dynamic change color polylines
+ */
+jQuery(document).on('click', '.polylines__select-color', function(e){
+    e.preventDefault();
+    var  color = jQuery(this).val();
+    var id = jQuery(this).closest('li').attr('data-id') ? jQuery(this).closest('li').attr('data-id'): '';
+    if(id == ''){
+        poly.setOptions({strokeColor: color});
+    }else{
+        polies[id].setOptions({strokeColor: color});
+    }
+});
+
+
+/**
+ * Dynamic change thick polylines
+ */
+jQuery(document).on('keyup', '.polylines__select-thick', function(e){
+    e.preventDefault();
+    var  thick = jQuery(this).val();
+    var id = jQuery(this).closest('li').attr('data-id') ? jQuery(this).closest('li').attr('data-id'): '';
+
+    if(id == ''){
+        poly.setOptions({ strokeWeight: thick});
+    }else{
+        polies[id].setOptions({ strokeWeight: thick});
+    }
+})

@@ -179,7 +179,7 @@ class GooglMapsAreasFunc
                                 <lable class="polylines__lable">Color</lable>
                                 <select class="polylines__select-color">
                                     <option value="#000000" <?php if($poly->color == '#000000') echo 'selected';?>>Black</option>
-                                    <option value="#ffffff" <?php if($poly->color == '#ffffff') echo 'selected';?>>White</option>
+                                    <option value="#0000FF" <?php if($poly->color == '#0000FF') echo 'selected';?>>Blue</option>
                                     <option value="#FF0000" <?php if($poly->color == '#FF0000') echo 'selected';?>>Red</option>
                                 </select></div>
                             <div class="polylines__group">
@@ -191,7 +191,7 @@ class GooglMapsAreasFunc
                                     var flightPlanCoordinates = [
                                         <?php echo $poly->coordinates; ?>
                                     ];
-                                    var poly = new google.maps.Polyline({
+                                    poly = new google.maps.Polyline({
                                         path: flightPlanCoordinates,
                                         geodesic: true,
                                         strokeColor: '<?php echo $poly->color; ?>',
@@ -200,6 +200,7 @@ class GooglMapsAreasFunc
                                     });
 
                                     poly.setMap(map);
+                                    polies[<?php echo $poly->id?>] = poly;
                                 });
                             </script>
                         <?php }
@@ -409,7 +410,7 @@ class GooglMapsAreasFunc
                                 map.setCenter(latlngbounds.getCenter());
                                 map.fitBounds(latlngbounds);
                                 <?php }?>
-
+console.log(polies);
                             });
                         </script>
                     <?php } ?>
