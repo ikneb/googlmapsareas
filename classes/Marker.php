@@ -1,10 +1,7 @@
 <?php
 
 /**
- * Created by PhpStorm.
- * User: junta
- * Date: 2/13/17
- * Time: 1:14 PM
+ * Model for work with markers
  */
 class Marker
 {
@@ -22,6 +19,11 @@ class Marker
     public $attachment_id;
 
 
+    /**
+     * Insert if not exist or update markers
+     *
+     * @return boolean
+     */
     public function save()
     {
         global $wpdb;
@@ -74,6 +76,12 @@ class Marker
     }
 
 
+    /**
+     * Get all markers by post id.
+     *
+     * @param int  $id_post Id current post.
+     * @return array $markers All marker that was saved for this post.
+     */
     public static function getMarkerByPostId($id_post)
     {
         global $wpdb;
@@ -84,7 +92,13 @@ class Marker
         return $markers;
     }
 
-    public static function getAllDefaultIcon(){
+    /**
+     * Get all name default icon.
+     *
+     * @return array $all_icon All icon name in folder img.
+     */
+    public static function getAllDefaultIcon()
+    {
 
         $all_ikon = scandir(plugin_dir_path(__FILE__) . '../img/marker-icon');
         $array = array_flip($all_ikon);
@@ -100,15 +114,22 @@ class Marker
         return $all_ikon;
     }
 
-
-    public static function remove($id_marker, $id_post_map){
+    /**
+     * Remove single marker by id
+     *
+     * @param int $id_marker
+     * @param int $id_post_map
+     * @return boolean
+     */
+    public static function remove($id_marker, $id_post_map)
+    {
         global $wpdb;
 
-            $wpdb->delete( $wpdb->prefix . 'googlmapsareas',
-                array(
-                    'id_marker' => $id_marker,
-                    'id_map_post' => $id_post_map
-                ) );
+        $wpdb->delete($wpdb->prefix . 'googlmapsareas',
+            array(
+                'id_marker' => $id_marker,
+                'id_map_post' => $id_post_map
+            ));
         return true;
     }
 }

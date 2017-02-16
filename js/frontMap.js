@@ -1,7 +1,12 @@
 var markers = JSON.parse(markers_object.markers);
+//var polylines = JSON.parse(markers_object.polylines);
 
 var LatLngList = [];
 var map;
+
+/**
+ * Init map and all listeners
+ */
 function initMap() {
     // Create a map object and specify the DOM element for display.
     map = new google.maps.Map(document.getElementById("map"), {
@@ -18,7 +23,10 @@ function initMap() {
 
 
         if(this.icon != 'default'){
-            var icon = '/wp-content/plugins/googlmapsareas/img/marker-icon/' + this.icon;
+            var icon = {
+                url: '/wp-content/plugins/googlmapsareas/img/marker-icon/' + this.icon,
+                scaledSize: new google.maps.Size(50, 50)
+            };
             marker.setIcon(icon);
         }
         if(this.attachment_id != 0){
@@ -79,11 +87,29 @@ function initMap() {
         LatLngList.push(  new google.maps.LatLng (Number(arr_coord[0]),Number(arr_coord[1])) );
     });
 
+    jQuery.each(markers_object.polylines, function(){
+        var coord = this.coordinates;
+        newcoord = coord.replace( /lat/g, '"lat"' );
+        newnewcoord = newcoord.replace( /lng/g, '"lng"' );
+        arr = coord.split(',\n');
+
+        var flightPlanCoordinates =[];
+        console.log(flightPlanCoordinates);
+        var poly = new google.maps.Polyline({
+            path: flightPlanCoordinates,
+            geodesic: true,
+            strokeColor: this.color,
+            strokeOpacity: 1.0,
+            strokeWeight: this.thick
+    });
+
+    poly.setMap(map);
+    });
+
     var latlngbounds = new google.maps.LatLngBounds();
     LatLngList.forEach(function(latLng){
         latlngbounds.extend(latLng);
     });
-    console.log(markers_object.coordinate.length);
     if(markers_object.coordinate.length > 1){
         map.setCenter(new google.maps.LatLng(Number(markers_object.coordinate[0]), Number(markers_object.coordinate[1])));
         map.setZoom(Number(markers_object.zoom));

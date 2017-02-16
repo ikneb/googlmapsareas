@@ -4,8 +4,12 @@ var map;
 var markers = [];
 var LatLngList = [];
 var files;
+var poly;
 
 
+/**
+ * Init map on the post admin page
+ */
 function initMap() {
     var myLatlng = {lat: 51.508530, lng: -0.076132};
     map = new google.maps.Map(document.getElementById('map'), {
@@ -13,13 +17,17 @@ function initMap() {
         scrollwheel: false,
         zoom: 10
     });
+    addListenerForAddMarkers(myLatlng);
+}
 
+
+function addListenerForAddMarkers(myLatlng) {
     google.maps.event.addListener(map, 'click', function (event) {
         var newLi = document.createElement('li');
 
         id_marker = addMarker(event.latLng, map) - 1;
         newLi.innerHTML =
-            '<button class="marker__remove button button-primary">Delete field</button>' +
+            '<button class="marker__remove button button-primary">Delete marker</button>' +
             '<button class="marker__save button button-primary">Save</button>' +
             '<div class="marker__group-name" data-c="' +
             event.latLng.lat().toFixed(3) + ',' +
@@ -36,7 +44,7 @@ function initMap() {
             '<option value="2">Upload icon</option>' +
             '</select></div>' +
             '<div class=" marker__group-icon no-active marker__download">' +
-            '<div class="marker__download-icon" data-id="'+id_marker+'" data-src="">' +
+            '<div class="marker__download-icon" data-id="' + id_marker + '" data-src="">' +
             '<img  src="/wp-content/plugins/googlmapsareas/img/default.png" width="116px" height="116px"/><div>' +
             '<button type="submit" class="upload_image_button button">Загрузить</button>' +
             '<button type="submit" class="remove_image_button button">&times;</button>' +
@@ -66,6 +74,13 @@ function initMap() {
     });
 }
 
+/**
+ * Add marker when click on the map
+ *
+ * @param object location Coordinates click
+ * @param object map
+ * @return object markers All marker in this map.
+ */
 function addMarker(location, map) {
     var marker = new google.maps.Marker({
         position: location,
@@ -76,6 +91,9 @@ function addMarker(location, map) {
     return markers.push(marker);
 }
 
+/**
+ * Add get default markers and insert in select
+ */
 function getMarker(newLi) {
     jQuery.ajax({
         type: 'POST',
@@ -90,7 +108,9 @@ function getMarker(newLi) {
     });
 }
 
-
+/**
+ * Remove marker
+ */
 jQuery(document).on('click', '.marker__remove', function (e) {
     e.preventDefault();
 
@@ -113,7 +133,9 @@ jQuery(document).on('click', '.marker__remove', function (e) {
 
 });
 
-
+/**
+ * Save or update marker
+ */
 jQuery(document).on('click', '.marker__save', function (e) {
     e.preventDefault();
     var id_marker = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -134,7 +156,7 @@ jQuery(document).on('click', '.marker__save', function (e) {
     var script = jQuery(this).closest('li').find('.marker__script-text').val() ?
         jQuery(this).closest('li').find('.marker__script-text').val() : '';
 
-    if(method == 2 && attachment_id == ''){
+    if (method == 2 && attachment_id == '') {
         icon = 'default';
         method = 0;
     }
@@ -164,6 +186,9 @@ jQuery(document).on('click', '.marker__save', function (e) {
     });
 });
 
+/**
+ * Select icon for marker
+ */
 jQuery(document).on('click', '.marker__select-icon', function (e) {
     e.preventDefault();
     var img = jQuery(this).val();
@@ -172,20 +197,23 @@ jQuery(document).on('click', '.marker__select-icon', function (e) {
     if (img == 'default') {
         markers[id].setIcon();
     } else {
-        markers[id].setIcon('/wp-content/plugins/googlmapsareas/img/marker-icon/' + img);
+        var icon = {
+            url: '/wp-content/plugins/googlmapsareas/img/marker-icon/' + img,
+            scaledSize: new google.maps.Size(50, 50)
+        };
+        markers[id].setIcon(icon);
     }
 });
 
-
+/**
+ * Select action on the click for marker
+ */
 jQuery(document).on('click', '.marker__select-action', function (e) {
     e.preventDefault();
     var select = jQuery(this).val();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
 
     switch (select) {
-        case '0':
-            console.log(0);
-            break;
         case '1':
             if (!jQuery(this).closest('li').find('.marker__group-title').hasClass('marker__group-title')) {
                 jQuery(this).closest('li').append(
@@ -249,7 +277,9 @@ jQuery(document).on('click', '.marker__select-action', function (e) {
     }
 });
 
-
+/**
+ * Remove action when hover and render title marker
+ */
 jQuery(document).on('click', '.marker__group-title img', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -257,7 +287,9 @@ jQuery(document).on('click', '.marker__group-title img', function (e) {
     jQuery(this).closest('.marker__group-title').remove();
 });
 
-
+/**
+ * Remove action window when click
+ */
 jQuery(document).on('click', '.marker__group-windows img', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -265,7 +297,9 @@ jQuery(document).on('click', '.marker__group-windows img', function (e) {
     jQuery(this).closest('.marker__group-windows').remove();
 });
 
-
+/**
+ * Remove action animation
+ */
 jQuery(document).on('click', '.marker__group-animate img', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -273,6 +307,9 @@ jQuery(document).on('click', '.marker__group-animate img', function (e) {
     jQuery(this).closest('.marker__group-animate').remove();
 });
 
+/**
+ * Remove action link
+ */
 jQuery(document).on('click', '.marker__group-link img', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -280,6 +317,9 @@ jQuery(document).on('click', '.marker__group-link img', function (e) {
     jQuery(this).closest('.marker__group-link').remove();
 });
 
+/**
+ * Remove action custom script
+ */
 jQuery(document).on('click', '.marker__group-script img', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -287,20 +327,22 @@ jQuery(document).on('click', '.marker__group-script img', function (e) {
     jQuery(this).closest('.marker__group-script').remove();
 });
 
-
-
-
+/**
+ * Add listener whit custom script on click marker
+ */
 jQuery(document).on('keyup', '.marker__script-text', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
     var value = jQuery(this).val();
     google.maps.event.clearListeners(markers[id], 'click');
     google.maps.event.addListener(markers[id], 'click', function () {
-       eval(value);
+        eval(value);
     });
 });
 
-
+/**
+ * Add listener whit redirect link on click marker
+ */
 jQuery(document).on('keyup', '.marker__link-text', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -311,6 +353,9 @@ jQuery(document).on('keyup', '.marker__link-text', function (e) {
     });
 });
 
+/**
+ * Add title on hover marker
+ */
 jQuery(document).on('keyup', '.marker__label-text', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -319,7 +364,9 @@ jQuery(document).on('keyup', '.marker__label-text', function (e) {
 });
 
 
-
+/**
+ * Add listener whit window on click marker
+ */
 jQuery(document).on('keyup', '.marker__windows-text', function (e) {
     e.preventDefault();
     var id = jQuery(this).closest('li').find('.marker__group-name').attr('data-id');
@@ -340,7 +387,9 @@ jQuery(document).on('keyup', '.marker__windows-text', function (e) {
     });
 });
 
-
+/**
+ * Add listener whit animate effect on click marker
+ */
 jQuery(document).on('click', '.marker__select-animate', function (e) {
     e.preventDefault();
     var select = jQuery(this).val();
@@ -365,7 +414,9 @@ jQuery(document).on('click', '.marker__select-animate', function (e) {
     }
 });
 
-
+/**
+ * Select method change marker icon
+ */
 jQuery(document).on('click', '.marker__select-method', function (e) {
     e.preventDefault();
     var select = jQuery(this).val();
@@ -375,7 +426,7 @@ jQuery(document).on('click', '.marker__select-method', function (e) {
         case '1':
             var id = jQuery(this).closest('li').find('.marker__download-icon').attr('data-id');
             markers[id].setIcon();
-            jQuery(this).closest('li').find('.marker__download-icon').children().attr('src','/wp-content/plugins/googlmapsareas/img/default.png' );
+            jQuery(this).closest('li').find('.marker__download-icon').children().attr('src', '/wp-content/plugins/googlmapsareas/img/default.png');
             jQuery(this).closest('li').find('.marker__select').removeClass('no-active');
             jQuery(this).closest('li').find('.marker__download').addClass('no-active');
             break;
@@ -389,7 +440,9 @@ jQuery(document).on('click', '.marker__select-method', function (e) {
     }
 });
 
-
+/**
+ * Notification process save or remove markers
+ */
 function process(data) {
     if (data) {
         jQuery('.map__wrapper').append(
@@ -409,14 +462,16 @@ function process(data) {
     }
 }
 
+
+/**
+ * Download or remove icon
+ */
 jQuery(window).load(function () {
     clickDownlosd();
 });
-
 function clickDownlosd() {
     jQuery(function ($) {
         $('.upload_image_button').click(function () {
-
             var send_attachment_bkp = wp.media.editor.send.attachment;
             var button = $(this);
             wp.media.editor.send.attachment = function (props, attachment) {
@@ -450,10 +505,12 @@ function clickDownlosd() {
 
 }
 
-
-jQuery(document).on('click', '.current', function(e){
+/**
+ * Save center map
+ */
+jQuery(document).on('click', '.current', function (e) {
     var center = map.getCenter();
-    var coord = center.lat() +',' + center.lng() ;
+    var coord = center.lat() + ',' + center.lng();
     var zoom = map.getZoom();
     var id_post = jQuery(this).closest('.center-map').attr('data-id');
     jQuery.ajax({
@@ -472,7 +529,11 @@ jQuery(document).on('click', '.current', function(e){
 
 });
 
-jQuery(document).on('click', '.center-marker', function(e){
+
+/**
+ * Remove center map
+ */
+jQuery(document).on('click', '.center-marker', function (e) {
 
     var id_post = jQuery(this).closest('.center-map').attr('data-id');
     jQuery.ajax({
@@ -487,4 +548,119 @@ jQuery(document).on('click', '.center-marker', function(e){
         }
     });
 
+});
+
+/**
+ * Add polyline
+ */
+jQuery(document).on('click', '.polylines-add', function (e) {
+    e.preventDefault();
+    jQuery(this).addClass('no-active');
+    var newLi = document.createElement('li');
+    newLi.innerHTML =
+        '<button class="polylines__remove button button-primary">Delete polyline</button>' +
+        '<button class="polylines__save button button-primary">Save</button>' +
+        '<div class="polylines__group">' +
+        '<label class="polylines__lable">Name</label>' +
+        '<input name="name" class="marker__input">' +
+        '</div>' +
+        '<div class="polylines__group">' +
+        '<lable class="polylines__lable">Color</lable>' +
+        '<select class="polylines__select-color">' +
+        '<option value="#ffffff">Black</option>' +
+        '<option value="#000000">White</option>' +
+        '<option value="#FF0000">Red</option>' +
+        '</select></div>' +
+        '<div class="polylines__group">' +
+        '<lable class="polylines__lable">Thickness of the line(px)</lable>' +
+        '<input class="polylines__select-thick" type="number" name="thick" value="1">' +
+        '</div>';
+
+    polyline__add.appendChild(newLi);
+
+    poly = new google.maps.Polyline({
+        strokeColor: '#000000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2,
+        editable: true
+    });
+    map.setOptions({draggableCursor: 'crosshair'});
+    poly.setMap(map);
+    google.maps.event.clearListeners(map, 'click');
+    map.addListener('click', function(event){
+        var path = poly.getPath();
+        path.push(event.latLng);
+        coord_poly =  getPathVariableCode(poly);
+        jQuery('#polyline__add').find('li').attr('data-cord', coord_poly);
+    });
+
+});
+
+/**
+ *   Writing all coordinate polyline in variable
+ */
+function getPathVariableCode(line) {
+    var codeStr = '';
+    var pathArr = line.getPath();
+    for (var i = 0; i < pathArr.length; i++) {
+        codeStr += '    {lat: ' + pathArr.getAt(i).lat() + ', lng: ' + pathArr.getAt(i).lng() + '}';
+        if (i !== pathArr.length - 1) {
+            codeStr += ',\n';
+        }
+    }
+
+    return codeStr;
+};
+
+
+/**
+ * Save polyline
+ */
+jQuery(document).on('click', '.polylines__save', function (e) {
+    e.preventDefault();
+    var myLatlng = {lat: 51.508530, lng: -0.076132};
+    map.setOptions({draggableCursor: 'url(http://maps.google.com/mapfiles/openhand.cur), move'});
+    google.maps.event.clearListeners(map, 'click');
+    addListenerForAddMarkers(myLatlng);
+    var coord = jQuery(this).closest('li').attr('data-cord');
+    var id = jQuery(this).closest('li').attr('data-id') ? jQuery(this).closest('li').attr('data-id'): '';
+    var id_post =  jQuery(this).closest('.polylines__wrapper').attr('data-id');
+    var name = jQuery(this).closest('li').find('input[name="name"]').val();
+    var color = jQuery(this).closest('li').find('.polylines__select-color').val();
+    var thick = jQuery(this).closest('li').find('input[name="thick"]').val();
+
+
+    var button =jQuery(this);
+    jQuery.ajax({
+        type: 'POST',
+        url: '/wp-content/plugins/googlmapsareas/ajax.php',
+        data: {
+            action: 'save_polyline',
+            id: id,
+            coordinate: coord,
+            name: name,
+            id_post: id_post,
+            color: color,
+            thick: thick
+        },
+        success: function (data) {
+            console.log(data);
+            button.closest('li').attr('data-id', data );
+            jQuery('.polylines-add').removeClass('no-active');
+        }
+    });
+});
+
+/**
+ * Remove polyline
+ */
+jQuery(document).on('click', '.polylines__remove', function (e) {
+    e.preventDefault();
+    var myLatlng = {lat: 51.508530, lng: -0.076132};
+    map.setOptions({draggableCursor: 'url(http://maps.google.com/mapfiles/openhand.cur), move'});
+    google.maps.event.clearListeners(map, 'click');
+    addListenerForAddMarkers(myLatlng);
+    poly.setMap(null);
+    jQuery(this).closest('li').remove();
+    jQuery('.polylines-add').removeClass('no-active');
 });

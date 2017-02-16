@@ -2,7 +2,7 @@
 define('WP_USE_THEMES', false);
 require_once('../../../wp-load.php');
 require_once('classes/Marker.php');
-
+require_once('classes/Polylines.php');
 
 if(!empty($_POST['action'])) {
     switch ($_POST['action']) {
@@ -80,13 +80,16 @@ if(!empty($_POST['action'])) {
             }
 
             break;
+        case 'save_polyline':
+
+                $polyline = new Polylines();
+                $polyline->id = $_POST['id'] ? $_POST['id'] : '';
+                $polyline->id_map_post = $_POST['id_post'] ? $_POST['id_post'] : '';
+                $polyline->name = $_POST['name'] ? $_POST['name'] : '';
+                $polyline->color = $_POST['color'] ? $_POST['color'] : '';
+                $polyline->thick = $_POST['thick'] ? $_POST['thick'] : '';
+                $polyline->coordinates = $_POST['coordinate'] ? $_POST['coordinate'] : '';
+                echo $polyline->save();
+            break;
     }
-}
-
-
-if(!empty($_FILES['img'])){
-    $target_dir = "uploads/";
-    $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
-    $uploadOk = 1;
-    $imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
 }

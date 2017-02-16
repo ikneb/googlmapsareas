@@ -9,20 +9,25 @@ Author URI: http://
 */
 
 require_once('classes/Marker.php');
-
+require_once('classes/Polylines.php');
 
 class GooglMapsAreasFunc
 {
 
+    /**
+     * We setup action for install and uninstall plugin
+     */
     function __construct()
     {
         register_activation_hook(__FILE__, array('GooglMapsAreasFunc', 'install'));
         register_uninstall_hook(__FILE__, array('GooglMapsAreasFunc', 'uninstall'));
     }
 
+    /**
+     * Init is where we setup actions and filters
+     */
     function init()
     {
-        // Actions and filters
         add_action('init', array($this, 'create_post_type'));
         add_action('edit_form_advanced', array($this, 'my_add_to_map'));
         add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'));
@@ -32,13 +37,15 @@ class GooglMapsAreasFunc
         add_action('wp_ajax_nopriv_get_all_marker', 'get_all_marker');
     }
 
-
+    /**
+     * Create table in db for save markers
+     */
     function install()
     {
         global $wpdb;
         $table_name = $wpdb->prefix . "googlmapsareas";
         $charset_collate = $wpdb->get_charset_collate();
-        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        $sql_googlmapsareas = "CREATE TABLE IF NOT EXISTS $table_name (
               id INT(11) NOT NULL AUTO_INCREMENT,
               id_marker INT(11) NOT NULL,
               id_map_post INT(11) NOT NULL,
@@ -55,11 +62,24 @@ class GooglMapsAreasFunc
               PRIMARY KEY (id)
         ) $charset_collate";
 
-
+        $table_name = $wpdb->prefix . "polylines";
+        $sql_polylines = "CREATE TABLE IF NOT EXISTS $table_name (
+              id INT(11) NOT NULL AUTO_INCREMENT,
+              id_map_post INT(11) NOT NULL,
+              name varchar(100) NOT NULL default '',
+              coordinates text NOT NULL default '',
+              color varchar(255) NOT NULL default '',
+              thick varchar(255) NOT NULL default '',
+              PRIMARY KEY (id)
+        ) $charset_collate";
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+        dbDelta($sql_googlmapsareas);
+        dbDelta($sql_polylines);
     }
 
+    /**
+     * Remove table in db
+     */
     function uninstall()
     {
 
@@ -69,14 +89,15 @@ class GooglMapsAreasFunc
         $wpdb->query($sql);
     }
 
-
+    /**
+     * Include script
+     */
     function admin_enqueue_scripts()
     {
         global $post;
         wp_enqueue_media();
         if (isset($post) && $post->post_type == 'wt_maps') {
             wp_enqueue_style('goglemapsareas-all', plugin_dir_url(__FILE__) . 'css/all.css');
-            wp_enqueue_script('goglemapsareas-plugins', plugin_dir_url(__FILE__) . 'js/plugin.js');
         }
 
         wp_enqueue_script('goglemapsareas-init-js', plugin_dir_url(__FILE__) . 'js/googlMap.js');
@@ -86,7 +107,9 @@ class GooglMapsAreasFunc
 
     }
 
-
+    /**
+     * Create custom post type
+     */
     function create_post_type()
     {
         register_post_type('wt_maps',
@@ -102,7 +125,10 @@ class GooglMapsAreasFunc
         );
     }
 
-
+    /**
+     * Add map, if is exist, marker on the page post type.
+     * If marker have action, we add it in this method
+     */
     function my_add_to_map()
     {
         global $post;
@@ -123,16 +149,67 @@ class GooglMapsAreasFunc
             <?php
             $coord = get_post_meta($post->ID, 'coordinate', true);
             $zoom = get_post_meta($post->ID, 'zoom', true);
-           $coordinates = explode(',', $coord);
+            $coordinates = explode(',', $coord);
             ?>
             <div class="center-map" data-id="<?php echo $post->ID; ?>">
                 <input type="radio" name="group1" value="1" <?php if (empty($coord)) echo 'checked'; ?> checked
                        class="center-marker"> Locate the center between the markers<br/>
                 <input type="radio" name="group1" value="1"
                        class="current" <?php if (!empty($coord)) echo 'checked'; ?>>
-                Locate the center at the current position<br/>
+                Locate the center at the current position(Position save on the moment switch radio button)<br/>
+            </div>
+            <div class="polylines__wrapper" data-id="<?php echo $post->ID; ?>">
+                <h2>Polylines</h2>
+                <button class="polylines-add button button-default">Add Polylines</button>
+                <!--<button class="polylines-save button button-default">Save Polylines</button>
+                <button class="polylines-remove button button-default">Remove Polylines</button>-->
+                <ul id="polyline__add">
+                    <?php
+                    $polylines = Polylines::getAllByPostId($post->ID);
+                    if (!empty($polylines)) {
+                        foreach ($polylines as $poly) {
+                            ?>
+                            <li data-id="<?php echo $poly->id; ?>" data-cord="<?php echo $poly->coordinates; ?>">
+                                <button class="polylines__remove button button-primary">Delete polyline</button>
+                            <button class="polylines__save button button-primary">Save</button>
+                            <div class="polylines__group">
+                            <label class="polylines__lable">Name</label>
+                            <input name="name" class="marker__input" value="<?php echo $poly->name; ?>"> </div>
+                            <div class="polylines__group">
+                                <lable class="polylines__lable">Color</lable>
+                                <select class="polylines__select-color">
+                                    <option value="#000000" <?php if($poly->color == '#000000') echo 'selected';?>>Black</option>
+                                    <option value="#ffffff" <?php if($poly->color == '#ffffff') echo 'selected';?>>White</option>
+                                    <option value="#FF0000" <?php if($poly->color == '#FF0000') echo 'selected';?>>Red</option>
+                                </select></div>
+                            <div class="polylines__group">
+                                <lable class="polylines__lable">Thickness of the line(px)</lable>
+                                <input class="polylines__select-thick" type="number" name="thick" value="<?php echo $poly->thick; ?>">
+                            </div></li>
+                            <script>
+                                jQuery(window).load(function () {
+                                    var flightPlanCoordinates = [
+                                        <?php echo $poly->coordinates; ?>
+                                    ];
+                                    var poly = new google.maps.Polyline({
+                                        path: flightPlanCoordinates,
+                                        geodesic: true,
+                                        strokeColor: '<?php echo $poly->color; ?>',
+                                        strokeOpacity: 1.0,
+                                        strokeWeight: <?php echo $poly->thick; ?>
+                                    });
+
+                                    poly.setMap(map);
+                                });
+                            </script>
+                        <?php }
+                    }
+                    ?>
+
+                </ul>
             </div>
             <div class="marker__wrapper" data-postid="<?php echo $post->ID; ?>">
+                <h2>Markers</h2>
                 <ul id="marker__list">
                     <?php
 
@@ -143,7 +220,7 @@ class GooglMapsAreasFunc
                     foreach ($markers as $marker) {
                         ?>
                         <li>
-                            <button class="marker__remove button button-primary">Delete field</button>
+                            <button class="marker__remove button button-primary">Delete marker</button>
                             <button class="marker__save button button-primary">Save</button>
                             <div class="marker__group-name" data-c="<?php echo $marker->coordinates; ?>"
                                  data-id="<?php echo $marker->id_marker; ?>">
@@ -163,8 +240,11 @@ class GooglMapsAreasFunc
                                 echo 'no-active';
                             } ?> marker__download">
                                 <?php
-                                $default = wp_get_attachment_image_src($marker->attachment_id, 'large');
-                                $default = $default[0]; ?>
+                                if (!empty($marker->attachment_id)) {
+                                    $default = wp_get_attachment_image_src($marker->attachment_id, 'large');
+                                    $default = $default[0];
+                                }
+                                ?>
                                 <div class="marker__download-icon" data-id="<?php echo $marker->id_marker; ?>"
                                      data-src="<?php echo $marker->attachment_id; ?>">
                                     <img src="<?php echo $default; ?>" width="116px"
@@ -264,7 +344,11 @@ class GooglMapsAreasFunc
                                 });
                                 <?php if($marker->icon != 'default'){ ?>
                                 img = '<?php echo $marker->icon; ?>';
-                                marker.setIcon('/wp-content/plugins/googlmapsareas/img/marker-icon/' + img);
+                                var icon = {
+                                    url: '/wp-content/plugins/googlmapsareas/img/marker-icon/' + img,
+                                    scaledSize: new google.maps.Size(50, 50)
+                                };
+                                marker.setIcon(icon);
                                 <?php }
                                     if(!empty($marker->label_text)){ ?>
                                 marker.setTitle('<?php echo $marker->label_text; ?>');
@@ -317,7 +401,7 @@ class GooglMapsAreasFunc
                                 LatLngList.forEach(function (latLng) {
                                     latlngbounds.extend(latLng);
                                 });
-                                <?php if(!empty($coord)){
+                                <?php if(!empty($coordinates[0] && !empty($coordinates[0]) && !empty($zoom))){
                                 ?>
                                 map.setCenter(new google.maps.LatLng(<?php echo $coordinates[0]?>, <?php echo $coordinates[1]?>));
                                 map.setZoom(Number(<?php echo (int)$zoom; ?>));
@@ -335,7 +419,9 @@ class GooglMapsAreasFunc
         }
     }
 
-
+    /**
+     * Remove editor
+     */
     function reset_editor()
     {
         global $post;
@@ -350,14 +436,20 @@ class GooglMapsAreasFunc
 
     }
 
+    /**
+     * Render shortcode on the front page
+     *
+     * @param array $attr All parameters that passed in the shortcode
+     * @return string @result
+     */
     function shortcode_func($attr)
     {
         $markers = Marker::getMarkerByPostId($attr['id']);
         $markers = json_encode($markers);
-
         $coordinate = get_post_meta((int)$attr['id'], 'coordinate', true);
         $coordinate = explode(',', $coordinate);
         $zoom = get_post_meta((int)$attr['id'], 'zoom', true);
+        $polyline = Polylines::getAllByPostId($attr['id']);
 
         $width = '';
         $height = '';
@@ -384,18 +476,13 @@ class GooglMapsAreasFunc
         wp_localize_script('goglemapsareas-front-map', 'markers_object', array(
             'markers' => $markers,
             'coordinate' => $coordinate,
-            'zoom' => $zoom
+            'zoom' => $zoom,
+            'polylines' => $polyline,
         ));
 
         return $result;
     }
 
-    function get_all_marker()
-    {
-        $all_ikon = json_encode(scandir(plugin_dir_path(__FILE__) . 'img/marker-icon'));
-        echo 'test';
-        wp_die();
-    }
 }
 
 global $google_maps_areas;
