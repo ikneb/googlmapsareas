@@ -451,6 +451,7 @@ class GooglMapsAreasFunc
         $zoom = get_post_meta((int)$attr['id'], 'zoom', true);
         $polyline = Polylines::getAllByPostId($attr['id']);
 
+
         $width = '';
         $height = '';
         if (isset($attr['width'])) {
@@ -470,7 +471,24 @@ class GooglMapsAreasFunc
                     async defer>
                 </script>
                 <div id="map" style="width:' . $width . ';height:' . $height . ';"></div>
-            </div>';
+            </div>
+            ';
+        foreach($polyline as $poly){
+            $result .= '<script>
+            jQuery(window).load(function(){
+            var flightPlanCoordinates =['.$poly->coordinates.'];
+
+            var poly = new google.maps.Polyline({
+                path: flightPlanCoordinates,
+            geodesic: true,
+            strokeColor: \''.$poly->color.'\',
+            strokeOpacity: 1.0,
+            strokeWeight: '.$poly->thick.'
+            });
+            poly.setMap(map);
+            });
+            </script>';
+        }
 
         wp_enqueue_script('goglemapsareas-front-map', plugin_dir_url(__FILE__) . 'js/frontMap.js');
         wp_localize_script('goglemapsareas-front-map', 'markers_object', array(

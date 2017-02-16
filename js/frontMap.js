@@ -87,24 +87,7 @@ function initMap() {
         LatLngList.push(  new google.maps.LatLng (Number(arr_coord[0]),Number(arr_coord[1])) );
     });
 
-    jQuery.each(markers_object.polylines, function(){
-        var coord = this.coordinates;
-        newcoord = coord.replace( /lat/g, '"lat"' );
-        newnewcoord = newcoord.replace( /lng/g, '"lng"' );
-        arr = coord.split(',\n');
 
-        var flightPlanCoordinates =[];
-        console.log(flightPlanCoordinates);
-        var poly = new google.maps.Polyline({
-            path: flightPlanCoordinates,
-            geodesic: true,
-            strokeColor: this.color,
-            strokeOpacity: 1.0,
-            strokeWeight: this.thick
-    });
-
-    poly.setMap(map);
-    });
 
     var latlngbounds = new google.maps.LatLngBounds();
     LatLngList.forEach(function(latLng){

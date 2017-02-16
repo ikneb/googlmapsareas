@@ -38,7 +38,6 @@ class Polylines
             );
             return true;
         } else {
-
             $wpdb->insert(
                 $wpdb->prefix . "polylines", array(
                     'id_map_post' => $this->id_map_post,
